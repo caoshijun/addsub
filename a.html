@@ -1,0 +1,256 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>test</title>
+        <style type="text/css">
+            /* fieldset{font-size:32px;background-color:#EEEEEE;border-radius:25px;border-style:solid solid solid solid;border-width: 1px;}
+            fieldset legend{font-size:32px;background-color:#DDDDDD;border-radius:10px;border-style:solid solid solid solid;border-width: 1px;}
+            table,td,input{border-radius:5px;border-collapse:collapse;border:1px solid black;}
+             */
+            table,th,td,input,select{font-size:25px;border-radius:5px;border-collapse:collapse;border:1px solid black;}
+            fieldset{width:90%;font-size:25px;background-color:#DDDDDD;border-radius:10px;border-style:solid solid solid solid;border-width: 1px;}
+            fieldset legend{width:200px;font-size:32px;background-color:#DDDDDD;border-radius:10px;border-style:solid solid solid solid;border-width: 1px;}
+        </style>
+    </head>
+<body>
+
+<script type="text/javascript" charset="UTF-8">
+//config的定义
+
+//如果已经保存有配置信息，直接载入并转换为obj,如果不存在，则开始设定
+if (localStorage.config!=null){config=JSON.parse(localStorage.config);}
+else{config={"setup":"","uName":"","pNum":1,"tdNum":"4","q2Num":{"maxNum":10,"qMode":"1","fix":"10","choice":"0","act":15},"q3Num":{"maxNum":"20","qMode":"2","fix":"1","choice":"2","act":"12"},"q4Num":{"maxNum":"3","qMode":"3","fix":"5","choice":"3","act":"11"}}}
+if (localStorage.err!=null){config=JSON.parse(localStorage.err)}else{err={}}
+if (localStorage.bTime!=null){config=JSON.parse(localStorage.bTime)}else{bTime={}}
+
+initConfig()
+
+//转换为txt，保存到objName的H5 localstorage
+function objSave2Txt(txtName,objName){localStorage[txtName]=JSON.stringify(objName)}
+
+function initConfig(){
+    setup=config.setup
+    uName=config.uName
+    pNum=config.pNum
+    tdNum=config.tdNum
+    totalNum=0
+    //q2MaxNum q2Mode q2FixNum q2ChaoNum q2Act totalNum
+    for (i=2;i<=4;i++){
+        eval("q"+i+"MaxNum=parseInt(config.q"+i+"Num.maxNum)")
+        eval("q"+i+"Mode=parseInt(config.q"+i+"Num.qMode)")
+        eval("q"+i+"FixNum=parseInt(config.q"+i+"Num.fix)")
+        eval("q"+i+"ChosNum=parseInt(config.q"+i+"Num.choice)")
+        eval("q"+i+"Act=parseInt(config.q"+i+"Num.act)")
+        _=eval("q"+i+"FixNum+q"+i+"ChosNum")
+        totalNum+=_
+    }
+    //alert(totalNum)
+    document.write("<body><center>")
+    //document.write(JSON.stringify(config))
+    if (setup!=null && setup!="" && uName!=null && uName!=""){
+        var myDate=new Date()
+        var textDate=myDate.toLocaleDateString().replace(/\//g,"\.")
+        document.write("<fieldset class=title><legend>答题信息:<input type=button value=配置 onClick=getFormValue('Flush'); /></legend>")
+        document.write("<form class=title><table class=title><tr class=title>")
+        document.write("<th>姓名</th><th>日期</th><th>总题数</th><th>答对数</th><th>正确率</th><th>用时</th></tr><tr>")
+        document.write("<td id=name>"+uName+"</td><td id=date>"+textDate+"</td><td id=total></td><td id=info></td><td id=cinfo></td><td id=time></td>")
+        document.write("</tr></table></form>")
+        document.getElementById('name').innerHTML=uName
+        document.getElementById('qnum').innerHTML=totalNum
+        document.write("</fieldset>")
+        //getQuestion()
+        document.getElementById("re1").focus()
+        document.getElementById("re1").select()
+        //timedCount()
+        //document.write(JSON.stringify(config))
+    }
+    else{initSetup();}
+}
+
+function initSetup(){
+    //clearTimeout(t)
+    document.write("<fieldset class=setup><legend>出题信息:</legend>")
+    document.write("<form class=setup><table class=setup>")
+    document.write("<tr><th>姓名:")
+    document.write("</th><td colspan=4><input onfocus=focusById(this.id) type='text' size=10 id='idUserName' />")
+    document.write("</td></tr>")
+    document.write("<tr><th>试题排版:")
+    document.write("</th><td colspan=2>横排<input type=radio id=pNum1 name=pNum value=1 />")
+    document.write("竖排<input type=radio id=pNum2 name=pNum value=2 />")
+    document.write("</td><td colspan=2>每行<input onfocus=focusById(this.id) type='tel' size=1 id='idTdNum' value='4' />题")
+    document.write("</td></tr><tr><td colspan=5></td></tr>")
+    document.write("<tr><th>命题范围</th><th>算式类型</th><th>选择题型</th><th>选择题数</th><th>运算规则</th></tr>")
+    for (i=2;i<=4;i++){
+        document.write("<tr><td><input type=tel size=3 id=idMaxNum"+i+" value='20' />以内</td><td><input type=checkbox id=idMode"+i+" onclick=checkCheckbox("+i+") value="+i+" />"+i+"个数的</td><td id=idAction"+i+"></td><td id=idType"+i+"></td><td id=idFCNum"+i+"></td></tr>")
+        checkCheckbox(i)
+    }
+    if (uName!=null && uName!=""){document.getElementById('idUserName').value=uName}
+    if (!isNaN(tdNum)){document.getElementById('idTdNum').value=tdNum}
+    if (!isNaN(pNum)){document.getElementById("pNum"+pNum).checked=true}
+    document.write("</table>")
+    document.write("<input type=button value=确认 onClick='getFormValue();'/></form>")
+    document.write("</fieldset></center>")
+}
+
+function checkCheckbox(x){
+    if (document.getElementById("idMode"+x).checked){
+        document.getElementById("idType"+x).innerHTML="<select id=idSelectType onchange=inputModeNum("+x+")><option id=qMode1"+x+" name=qMode value=1>填空</option><option id=qMode2"+x+" name=qMode value=2>选择</option><option id=qMode3"+x+" name=qMode value=3 selected=selected>混合</option></select>"
+        document.getElementById("idAction"+x).innerHTML="加<input type=checkbox id=act1"+x+" name=act value=1 />减<input type=checkbox id=act2"+x+" name=act value=2 />乘<input type=checkbox id=act4"+x+" name=act value=4 />除<input type=checkbox id=act8"+x+" name=act value=8 />"
+        inputModeNum(x)
+    }
+    else{
+        document.getElementById("idType"+x).innerHTML=""
+        document.getElementById("idFCNum"+x).innerHTML=""
+        document.getElementById("idAction"+x).innerHTML=""
+    }
+}
+
+function  inputModeNum(x){
+    if (x==2){fixNum=q2FixNum;choiceNum=q2ChosNum;myact=q2Act}
+    if (x==3){fixNum=q3FixNum;choiceNum=q3ChosNum;myact=q3Act}
+    if (x==4){fixNum=q4FixNum;choiceNum=q4ChosNum;myact=q4Act}
+    var fixTxt="填空题<input type='tel' size=3 id='idFix'"+x+" value='"+fixNum+"' />道"
+    var choiceTxt="选择题<input type='tel' size=3 id='idChoice'"+x+" value='"+choiceNum+"' />道"
+    if(document.getElementById("qMode1"+x).selected){document.getElementById("idFCNum"+x).innerHTML=fixTxt}
+    if(document.getElementById("qMode2"+x).selected){document.getElementById("idFCNum"+x).innerHTML=choiceTxt}
+    if(document.getElementById("qMode3"+x).selected){document.getElementById("idFCNum"+x).innerHTML=fixTxt+choiceTxt}
+    for (i=0;i<actNumConv(myact).length;i++){document.getElementById("act"+actNumConv(myact)[i]+x).checked=true;}
+}
+
+function focusById(x){
+    document.getElementById(x).focus()
+    document.getElementById(x).style.background="Gainsboro"
+    document.getElementById(x).select()
+    //document.getElementById(x).value=""
+}
+
+function addInputValueByName(name){
+    _=parseInt(0)
+    for (i=0;i<document.getElementsByName(name).length;i++){
+        if (document.getElementsByName(name)[i].checked){_+=parseInt(document.getElementsByName(name)[i].value)}
+    }
+    return _
+}
+
+function actNumConv(act){
+    var r=[]
+    switch (act){
+        case 15:r=[1,2,4,8];break
+        case 14:r=[  2,4,8];break
+        case 13:r=[1,  4,8];break
+        case 12:r=[    4,8];break
+        case 11:r=[1,2,  8];break
+        case 10:r=[  2,  8];break
+        case  9:r=[1,    8];break
+        case  8:r=[      8];break
+        case  7:r=[1,2,4  ];break
+        case  6:r=[  2,4  ];break
+        case  5:r=[1,  4  ];break
+        case  4:r=[    4  ];break
+        case  3:r=[1,2    ];break
+        case  2:r=[  2    ];break
+        case  1:r=[1      ];break
+    }
+    return r
+}
+
+
+//获取用户名等信息写入H5 localStore
+function getFormValue(F){
+    if (F!="Flush"){
+        uName=document.getElementById('idUserName').value
+        mNum=document.getElementById('idMaxNum').value
+
+        if(qMode==1 || qMode==3){fixNum=document.getElementById('idFix').value}
+        if(qMode==2 || qMode==3){choiceNum=document.getElementById('idChoice').value}
+        act=addInputValueByName("act")
+        pNum=addInputValueByName("pNum")
+        tdNum=document.getElementById('idTdNum').value
+        //检查输入
+        if (uName==null || uName==""){alert("请输入姓名");return;}
+        if (isNaN(mNum) || mNum==0){alert("请输入允许的范围数字");return;}
+        if (isNaN(qNum) || qNum==0){alert("请选择算式:\n2个数题型如:1+1 \n3个数题型如:1+1+1");return;}
+        if (qMode!=2){if (isNaN(fixNum) || fixNum==0){alert("请输入填空题数量");return;}}
+        if (qMode!=1){if (isNaN(choiceNum) || choiceNum==0){alert("请输入选择题数量");return;}}
+        if (isNaN(act) || act==0){alert("请选择运算规则");return;}
+        if (isNaN(tdNum) || tdNum==0){alert("请输入每行的题数");return;}
+        //获取定义值
+        config.setup="true"
+        config.uName=uName
+        config.quest.qMode=parseInt(qMode)
+        config.quest.fix=parseInt(fixNum)
+        config.quest.choice=parseInt(choiceNum)
+        config.act=parseInt(act)
+        config.mNum=parseInt(mNum)
+        config.qNum=parseInt(qNum)
+        config.pNum=parseInt(pNum)
+        config.tdNum=parseInt(tdNum)
+    }
+    else {config.setup=""}
+    objSave2Txt("config",config)
+    //document.write(JSON.stringify(config))
+    window.location.reload()
+}
+
+
+//随机进行加法或者减法运算
+function getRandomAddOrSub(){
+    _=Math.floor(Math.random()*10%2);
+    if (_==0){addOrSub="+";}
+    else{addOrSub="-";}
+}
+
+// actNum为四则定义数，loop为数字-1
+function getAction(actNum,loop){
+    var r=[]
+    switch (actNum){
+        case 15:r=["+","-","*","/"];break
+        case 14:r=[    "-","*","/"];break
+        case 13:r=["+",    "*","/"];break
+        case 12:r=[        "*","/"];break
+        case 11:r=["+","-",    "/"];break
+        case 10:r=[    "-",    "/"];break
+        case  9:r=["+",        "/"];break
+        case  8:r=[            "/"];break
+        case  7:r=["+","-","*"    ];break
+        case  6:r=[    "-","*"    ];break
+        case  5:r=["+",    "*"    ];break
+        case  4:r=[        "*"    ];break
+        case  3:r=["+","-"        ];break
+        case  2:r=[    "-"        ];break
+        case  1:r=["+"            ];break
+    }
+    out=[]
+}
+
+//获取两个合法的随机数，aos为加号或者减号，min，max为随机数的最小最大范围。
+//如果是加法，两个数和小于maxnum即可，如果是减法，要求第一个数小于第二个数。
+function getRandomIntAddOrSub(aos,min,max) {
+    while (true){
+        randNum1[qNum]=Math.floor(Math.random()*(max-min+1)+min);
+        randNum2[qNum]=Math.floor(Math.random()*(max-min+1)+min);
+        if (aos=="+"){if((randNum1[qNum]+randNum2[qNum])<=maxNum){break;}}
+        if (aos=="-"){if(randNum1[qNum]>=randNum2[qNum]){break;a}}
+    }
+}
+
+// questionMode      题型（填空1、选择2）
+// count             题数
+// maxNumber         给定的出题范围，如20以内，50以内 
+// action            运算规则（加减乘除对应1,2,4,8)
+// questionNumber    定义几个数的运算 
+function makeQuestion(questMode,count,maxNumber,action,questionNumer){
+    question=[]
+    for (i=0;i<totalNum;i++){
+         
+    ;
+    }    
+    ;
+}
+
+
+    //question.push({"no1":1,"action":"+","no2":3,"ans":4})
+</script>
+</body>
+</html>
